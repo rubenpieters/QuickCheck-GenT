@@ -57,6 +57,13 @@ instance MonadGen QC.Gen where
   resize n (QC.MkGen g) = QC.MkGen $ \r _ -> g r n 
   choose range = QC.MkGen $ \r _ -> fst $ Random.randomR range r 
 
+instance (MonadGen m) => MonadGen (StateT s m) where
+  liftGen = lift . liftGen
+  variant k (StateT f) = StateT $ variant k . f
+  sized f = StateT (\s -> sized ((`runStateT` s) . f))
+  resize n (StateT f) = StateT $ resize n . f
+  choose range = lift $ choose range
+
 -- |
 -- Private variant-generating function.  Converts an integer into a chain 
 -- of (fst . split) and (snd . split) applications.  Every integer (including 
